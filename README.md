@@ -5,5 +5,5 @@ Simply open the file index.html or host it with apache, and start the node serve
 Without register!
 <br>
 <br>
-Client files:&nbsp;&nbsp;&nbsp;/src/game.js<br>
-Server js:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/server.js
+<b>Client files:</b>&nbsp;&nbsp;&nbsp;<i>/src/game.js<br></i>
+<b>Server js:</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>/server.js</i>
