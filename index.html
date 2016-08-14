@@ -1,0 +1,113 @@
+<!doctype html>
+<!--By izanbf1803-->
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Tic Tac Toe</title>
+	<meta name="owner" content="Izan Beltrán">
+	<meta name="author" content="izanbf.es">
+	<meta name="robots" content="index, follow">
+	<meta name="description" content="Tic Tac Toe Multiplayer!">
+	<meta name="keywords" content="Tic, Tac, Toe, Node, JS, JavaScript, nodejs">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	<meta property="og:title" content="Tic Tac Toe">
+	<meta property="og:image" content="http://izanbf.es/img/favicon.png">
+	<meta property="og:description" content="Play tic tac toe multiplayer online free!">
+	<meta property="og:site_name" content="Tic Tac Toe">
+	<meta property="og:url" content="http://izanbf.es/tictactoe/">
+	<meta property="og:locale" content="es_ES">
+	<meta property="og:type" content="website">
+	<link rel="icon" type="image/png" href="img/favicon.png" sizes="32x32">
+	<base href="src/">
+	<link href="font-awesome/css/font-awesome.min.css" rel="stylesheet">
+	<link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+	<span id="version">ALPHA 0.1.1</span>
+	<div id="settings">
+		<span id="settings-close" class="fa fa-times right" aria-hidden="true"></span>
+		<div class="row">
+		    <form class="col s12" id="settings-form">
+		      <div class="row">
+		        <div class="input-field col s12">
+		          <input storagekey="nick" id="nickVal" type="text" class="validate" max-length="20" required>
+		          <label for="nickVal">Nick</label>
+		        </div>
+		        <div class="input-field col s12">
+			        <input storagekey="profileimg" id="profileImg" type="text" class="validate" max-length="500" required>
+			          <label for="profileImg">Profile Image</label>
+			    </div>
+		      </div>
+		      <div class="row">
+		        <div class="input-field col s12">
+		        	<input class="right waves-effect waves-light btn" id="settings-submit" type="submit">
+		        </div>
+		      </div>
+		    </form>
+		  </div>
+	</div>
+	<div id="main">
+		<div id="game">
+			<span id="versus-text"></span>
+			<div id="casillas">
+				<div arraypos="0,2" class="no-click casilla bottom right"></div>
+				<div arraypos="0,0" class="no-click casilla bottom"></div>
+				<div arraypos="0,1" class="no-click casilla bottom left"></div>
+
+				<div arraypos="1,2" class="no-click casilla right"></div>
+				<div arraypos="1,0" class="no-click casilla"></div>
+				<div arraypos="1,1" class="no-click casilla left"></div>
+
+				<div arraypos="2,2" class="no-click casilla top right"></div>
+				<div arraypos="2,0" class="no-click casilla top"></div>
+				<div arraypos="2,1" class="no-click casilla top left"></div>
+			</div>
+		</div>
+		<div id="menu">
+			<span id="settings-button" class="fa fa-cog" aria-hidden="true"></span>
+			<span action="pvp" class="menu-button">Player vs Player</span>
+			<br><br>
+			<span action="pvp(p)" class="menu-button disabled">Private Game</span>
+			<br><br>
+			<span action="ia" class="menu-button disabled">Player vs AI</span>
+		</div>
+		<div id="search">
+			<span id="search-text"></span><span id="dots-interval"></span>
+		</div>
+		<div id="err">
+			<span>ERROR: </span><span id="err-text"></span>
+			<br><br>
+			<span>Reconnecting in </span>
+			<span id="time-interval"></span>
+		</div>
+		<div id="winner">
+			<span id="gameo">Game Over</span>
+			<br>
+			<span id="winner-text"></span>
+		</div>
+		<div id="selectNick">
+			<div class="row">
+			    <form class="col s12" id="nickForm">
+			      <div class="row">
+			        <div class="input-field col s12">
+			          <input id="nickValue" type="text" class="validate" max-length="20" required>
+			          <label for="nickValue">Nick</label>
+			        </div>
+			      </div>
+			      <div class="row">
+			        <div class="input-field col s12">
+			        	<input class="waves-effect waves-light btn" type="submit">
+			        </div>
+			      </div>
+			    </form>
+			  </div>
+		</div>
+	</div>
+	
+	<!---->
+	<script src="js/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/js/materialize.min.js"></script>
+	<script src="js/socket.io.js"></script>
+	<script src="game.js"></script>
+</body>
+</html>
