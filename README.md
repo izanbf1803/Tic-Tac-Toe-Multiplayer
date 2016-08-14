@@ -6,6 +6,6 @@ Without register!
 </h6>
 <br>
 <br>
-<b>Client js:</b>&nbsp;&nbsp;&nbsp;&nbsp;<i>/src/game.js</i>
+<b>Client js:</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>/src/game.js</i>
 <br>
-<b>Server js:</b>&nbsp;&nbsp;&nbsp;<i>/server.js</i>
+<b>Server js:</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>/server.js</i>
