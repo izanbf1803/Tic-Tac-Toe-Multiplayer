@@ -1,6 +1,6 @@
 //By izanbf1803
 
-const SERVER_IP = '<<YOUR NODE SERVER IP>>';
+const SERVER_IP = '192.168.1.200';//'<<YOUR NODE SERVER IP>>';
 const PORT = '8080';
                                                     //socket connection init
 var socket = io('http://'+SERVER_IP+':'+PORT);
@@ -41,12 +41,12 @@ $(function(){
     }   
 
     var TOAST = function(text, delay, _class){  //Show toast (like android)
-    	var toastContent = $('<span><b>'+text+'</b></span>');
-    	if (_class == undefined)
-    		Materialize.toast(toastContent, delay, 'rounded');
-    	else
-    		Materialize.toast(toastContent, delay, 'rounded msg_'+_class);
-    	
+        var toastContent = $('<span><b>'+text+'</b></span>');
+        if (_class == undefined)
+            Materialize.toast(toastContent, delay, 'rounded');
+        else
+            Materialize.toast(toastContent, delay, 'rounded msg_'+_class);
+        
     };
 
     var initHTMLBoard = function(board){  //init HTMLBoard object
@@ -155,17 +155,30 @@ $(function(){
     };
 
     var SETUP = function(){
-    	initHTMLBoard(htmlBoard);
-	    if (localStorage.nick != undefined && localStorage.nick != null  && localStorage.nick != "undefined") {
-	        setNick(localStorage.nick);
-	        setTimeout(checkConnection, 1000);
-	    } else {
-	        hideAllDivs();
-	        $("#main>#selectNick").fadeIn();
-	    }
+        initHTMLBoard(htmlBoard);
+        if (localStorage.nick != undefined && localStorage.nick != null  && localStorage.nick != "undefined") {
+            setNick(localStorage.nick);
+            setTimeout(checkConnection, 1000);
+        } else {
+            hideAllDivs();
+            $("#main>#selectNick").fadeIn();
+        }
     };
 
     SETUP(); //SETUP
+
+    function waitingInterval() {
+        let index = 0;
+        let str = [".","..","..."];
+        let interval = setInterval(function(){
+            if (!waiting4join)
+                clearInterval(interval);
+            index++;
+            if (index == str.length)
+                index = 0;
+            $("#search>#dots-interval").html(str[index]);
+        }, 500); 
+    }
 
     function joinPVP(){
         ID = socket.id;
@@ -178,26 +191,35 @@ $(function(){
         $("#main>#search").fadeIn();
         $("#search>#search-text").html("Waiting for opponent");
 
-        let index = 0;
-        let str = [".","..","..."];
-        let interval = setInterval(function(){
-            
-            if (!waiting4join)
-                clearInterval(interval);
-            index++;
-            if (index == str.length)
-                index = 0;
-            $("#search>#dots-interval").html(str[index]);
-        }, 500); 
+        waitingInterval();
 
-        socket.emit("join");
+        socket.emit("joinPVP");
+    }
+
+    function joinIA(){
+        ID = socket.id;
+
+        if (waiting4join)
+            return;
+
+        waiting4join = true;
+        hideAllDivs();
+        $("#main>#search").fadeIn();
+        $("#search>#search-text").html("Waiting for IA (server)");
+
+        waitingInterval();
+
+        socket.emit("joinIA");
     }
 
     $("span.menu-button").click(function(){  //Game menus buttons
         switch ($(this).attr("action")){
             case "pvp":
                 joinPVP();
-            break;
+                break;
+            case "ia":
+                joinIA();
+                break;
         }
     });
 
@@ -211,7 +233,7 @@ $(function(){
 
     $("div.casilla").click(function(){ //Try to do a movement
         if (!isMyTurn) {
-        	TOAST('Wait for enemy movement...', 1000, 'danger');
+            TOAST('Wait for enemy movement...', 1000, 'danger');
             return;
         }
 
@@ -220,7 +242,7 @@ $(function(){
     });
 
     $("#settings-button").click(function(){ //load settings values
-    	loadSettings();
+        loadSettings();
     });
 
     $("span#settings-close").click(function(){ //Close settings menu
@@ -255,7 +277,7 @@ $(function(){
     });
 
     socket.on("yourTurn", function(){  //User starts
-    	TOAST("YOUR TURN", 99999, "success");
+        TOAST("YOUR TURN", 99999, "success");
         isMyTurn = true;
         $("div.casilla").toggleClass("no-click");
     });
@@ -285,7 +307,7 @@ $(function(){
     });
 
     socket.on("setFicha", function(data){
-    	ficha = FICHA_STR[data];    //Set piece
+        ficha = FICHA_STR[data];    //Set piece
     });
 
 });

@@ -1,5 +1,5 @@
 {
-  "name": "Tic Tac Toe Multiplayer",
+  "name": "TicTacToeMultiplayer",
   "version": "0.1.1",
   "description": "Play Tic Tac Toe with your friends!",
   "main": "server.js",
@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "express": "~4.13.3",
-    "socket.io": "~1.3.7",
+    "socket.io": "~1.3.7"
   },
   "engines": {
     "node": "0.12.7"
