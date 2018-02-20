@@ -80,7 +80,7 @@ var notifyWinner = function(r_id, ficha) {
         var winnerID;
         if (ficha == "tie")
             winnerID = "tie";
-        else if (ficha == 'x')
+        else if (ficha == FICHAS[0])
             winnerID = ia_rooms[r_id].user;
         else
             winnerID = -1;
@@ -102,7 +102,7 @@ var checkWinner = function(r_id, board, ficha, simulation) {
 			if (xCount == 3 || yCount == 3) {
 				if (!simulation)
                     notifyWinner(r_id, ficha);
-				return true;
+				return ficha;
 			}
 		}
 	}
@@ -115,7 +115,7 @@ var checkWinner = function(r_id, board, ficha, simulation) {
 	if (diagonalCount == 3) {
 		if (!simulation)
             notifyWinner(r_id, ficha);
-		return true;
+		return ficha;
 	}
 
 	diagonalCount = 0;
@@ -126,16 +126,16 @@ var checkWinner = function(r_id, board, ficha, simulation) {
 	if (diagonalCount == 3) {
 		if (!simulation)
             notifyWinner(r_id, ficha);
-		return true;
+		return ficha;
 	}
 
 	if (board.movementCount == 9) {
 		if (!simulation)
             notifyWinner(r_id, "tie");
-        return true;
+        return "tie";
     }
 
-    return false;
+    return null;
 };
 
 io.sockets.on("connection", function(socket){
@@ -178,7 +178,7 @@ io.sockets.on("connection", function(socket){
             pvp_rooms[r_id].board.rows[xy[0]][xy[1]] = ficha;
             pvp_rooms[r_id].board.movementCount++;
 
-            if (!checkWinner(r_id, pvp_rooms[r_id].board, ficha, false)) {
+            if (checkWinner(r_id, pvp_rooms[r_id].board, ficha, false) == null) {
                 var indexOfPlayer = pvp_rooms[r_id].users.indexOf(socket.id);
                 clients[ pvp_rooms[r_id].users[ indexOfPlayer ^ 1 ] ].isMyTurn = true; //New player enabled
                 clients[socket.id].isMyTurn = false; //Old player locked
@@ -202,7 +202,7 @@ io.sockets.on("connection", function(socket){
             ia_rooms[r_id].board.rows[xy[0]][xy[1]] = ficha;
             ia_rooms[r_id].board.movementCount++;
 
-            if (!checkWinner(r_id, ia_rooms[r_id].board, ficha, false)) {
+            if (checkWinner(r_id, ia_rooms[r_id].board, ficha, false) == null) {
                 clients[socket.id].isMyTurn = false; //Old player locked
 
                 io.sockets.connected[socket.id].emit("switchTurn");
@@ -321,31 +321,86 @@ function ia_queue_serve(){
 
 function IA_turn(socket, r_id) {
     var move = IA_move(r_id);
+    console.log(move);
 
     ia_rooms[r_id].board.rows[move[0]][move[1]] = FICHAS[1];
     ia_rooms[r_id].board.movementCount++;
 
-    checkWinner(r_id, ia_rooms[r_id].board, FICHAS[1], false);
+    if (checkWinner(r_id, ia_rooms[r_id].board, FICHAS[1], false) == null) {
+        clients[socket.id].isMyTurn = true; //Old player unlocked
 
-    clients[socket.id].isMyTurn = true; //Old player unlocked
-
-    io.sockets.connected[socket.id].emit("switchTurn");
-    io.sockets.connected[socket.id].emit("updateBoard", {
-        x: move[0],
-        y: move[1],
-        ficha: FICHAS[1]
-    });
+        io.sockets.connected[socket.id].emit("switchTurn");
+        io.sockets.connected[socket.id].emit("updateBoard", {
+            x: move[0],
+            y: move[1],
+            ficha: FICHAS[1]
+        });
+    }
 }
 
 function IA_move(r_id) {
     var room = ia_rooms[r_id];
+    var best_move = null;
+    var best_score = -Infinity;
     for (var x = 0; x < 3; ++x) {
         for (var y = 0; y < 3; ++y) {
             if (room.board.rows[x][y] == null) {
-                return [x, y];
+                if (best_move == null)
+                    best_move = [x, y];
+                ia_rooms[r_id].board.rows[x][y] = FICHAS[1];
+                ia_rooms[r_id].board.movementCount++;
+
+                var score = minimax(r_id, 0, 4);
+                if (score > best_score) {
+                    best_score = score;
+                    best_move = [x, y];
+                }
+
+                // Restore
+                ia_rooms[r_id].board.rows[x][y] = null;
+                ia_rooms[r_id].board.movementCount--;
             }
         }
     }
+    return best_move;
+}
+
+function minimax(r_id, turn, depth) {
+    if (depth <= 0)
+        return 0;
+    var room = ia_rooms[r_id];
+    var best_score = -Infinity;
+    for (var x = 0; x < 3; ++x) {
+        for (var y = 0; y < 3; ++y) {
+            if (room.board.rows[x][y] == null) {
+                ia_rooms[r_id].board.rows[x][y] = FICHAS[turn];
+                ia_rooms[r_id].board.movementCount++;
+                var winner = checkWinner(r_id, ia_rooms[r_id].board, FICHAS[turn], true);
+
+                if (winner == null) {
+                    if (turn == 1) // IA turn
+                        best_score = Math.max(best_score, minimax(r_id, !turn, depth-1));
+                    else // player turn
+                        best_score = Math.min(best_score, minimax(r_id, !turn, depth-1));
+                }
+
+                // Restore
+                ia_rooms[r_id].board.rows[x][y] = null;
+                ia_rooms[r_id].board.movementCount--;
+
+                if (winner != null) {
+                    if (winner == "tie")
+                        return (turn ? 1 : -1);
+                    if (winner == FICHAS[1])
+                        return (turn ? 2 : -2);
+                    if (winner == FICHAS[0])
+                        return (turn ? -2 : 2);
+                }
+            }
+        }
+    }
+    if (best_score != 0) console.log(best_score);
+    return best_score;
 }
 
 setInterval(pvp_queue_serve, 1000);
