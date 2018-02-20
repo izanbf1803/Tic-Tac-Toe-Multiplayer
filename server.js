@@ -57,6 +57,7 @@ var pvp_queue = [];
 var ia_queue = [];
 var pvp_rooms = [];
 var ia_rooms = [];
+var room_id = 0;
 
 
 var randomRange = function(min, max) { //Random range including min and max as values
@@ -104,7 +105,7 @@ var checkWinner = function(r_id, board, ficha) {
 			diagonalCount++;
 	}
 	if (diagonalCount == 3) {
-		notifyWinner(room, ficha);
+		notifyWinner(r_id, ficha);
 		return true;
 	}
 
@@ -114,12 +115,12 @@ var checkWinner = function(r_id, board, ficha) {
 			diagonalCount++;
 	}
 	if (diagonalCount == 3) {
-		notifyWinner(room, ficha);
+		notifyWinner(r_id, ficha);
 		return true;
 	}
 
 	if (board.movementCount == 9) {
-		notifyWinner(room, "tie");
+		notifyWinner(r_id, "tie");
         return true;
     }
 
@@ -141,13 +142,13 @@ io.sockets.on("connection", function(socket){
     socket.on("joinPVP", function(){
         if (clients[socket.id].nick == null)
             return;
-        pvp_queue[pvp_queue.length] = socket.id;
+        pvp_queue.push(socket.id);
     });
 
     socket.on("joinIA", function(){
         if (clients[socket.id].nick == null)
             return;
-        ia_queue[ia_queue.length] = socket.id;
+        ia_queue.push(socket.id);
     });
 
     socket.on("putBox", function(data){
@@ -158,23 +159,23 @@ io.sockets.on("connection", function(socket){
         var r_id = clients[socket.id].room;
 
         if (r_id[0] == 'P') { // PVP
-            if (pvpr_ids[r_id].board.rows[xy[0]][xy[1]] != null)
+            if (pvp_rooms[r_id].board.rows[xy[0]][xy[1]] != null)
             	return;
 
             var ficha = clients[socket.id].ficha;
 
-            pvpr_ids[r_id].board.rows[xy[0]][xy[1]] = ficha;
-            pvpr_ids[r_id].board.movementCount++;
+            pvp_rooms[r_id].board.rows[xy[0]][xy[1]] = ficha;
+            pvp_rooms[r_id].board.movementCount++;
 
-            if (!checkWinner(r_id, pvpr_ids[r_id].board, ficha)) {
-                var indexOfPlayer = pvpr_ids[r_id].users.indexOf(socket.id);
-                clients[ pvpr_ids[r_id].users[ indexOfPlayer ^ 1 ] ].isMyTurn = true; //New player enabled
+            if (!checkWinner(r_id, pvp_rooms[r_id].board, ficha)) {
+                var indexOfPlayer = pvp_rooms[r_id].users.indexOf(socket.id);
+                clients[ pvp_rooms[r_id].users[ indexOfPlayer ^ 1 ] ].isMyTurn = true; //New player enabled
                 clients[socket.id].isMyTurn = false; //Old player locked
-                var otherPlayerId = clients[pvpr_ids[clients[socket.id].room].users[indexOfPlayer ^ 1]].id;
+                var otherPlayerId = clients[pvp_rooms[clients[socket.id].room].users[indexOfPlayer ^ 1]].id;
                 
                 io.sockets.in(r_id).emit("switchTurn");
 
-                io.sockets.in(pvpr_ids[r_id].id).emit("updateBoard", {
+                io.sockets.in(pvp_rooms[r_id].id).emit("updateBoard", {
                     x: xy[0],
                     y: xy[1],
                     ficha: ficha
@@ -220,7 +221,7 @@ io.sockets.on("connection", function(socket){
 function pvp_queue_serve(){ //Connect players in pvp_queue
     while (pvp_queue.length > 1) {
         var l = 1;
-        var r_id = "PVP"+String(pvp_rooms.length);
+        var r_id = "PVP"+String(room_id++);
 
         pvp_rooms[r_id] = {
             users: [pvp_queue[l-1], pvp_queue[l]],
@@ -268,7 +269,7 @@ function pvp_queue_serve(){ //Connect players in pvp_queue
 
 function ia_queue_serve(){
     while (ia_queue.length > 0) {
-        var r_id = "IA"+String(ia_rooms.length);
+        var r_id = "IA"+String(room_id++);
 
         ia_rooms[r_id] = {
             user: ia_queue[0],
@@ -308,27 +309,24 @@ function ia_queue_serve(){
 }
 
 function IA_turn(socket, r_id) {
-    setTimeout(function(socket, r_id) {
-        var move = IA_move(r_id);
+    var move = IA_move(r_id);
 
-        ia_rooms[r_id].board.rows[move[0]][move[1]] = FICHAS[1];
-        ia_rooms[r_id].board.movementCount++;
+    ia_rooms[r_id].board.rows[move[0]][move[1]] = FICHAS[1];
+    ia_rooms[r_id].board.movementCount++;
 
-        checkWinner(r_id, ia_rooms[r_id].board, FICHAS[1]);
+    checkWinner(r_id, ia_rooms[r_id].board, FICHAS[1]);
 
-        clients[socket.id].isMyTurn = true; //Old player unlocked
+    clients[socket.id].isMyTurn = true; //Old player unlocked
 
-        io.sockets.connected[socket.id].emit("switchTurn");
-        io.sockets.connected[socket.id].emit("updateBoard", {
-            x: move[0],
-            y: move[1],
-            ficha: FICHAS[1]
-        });
-    }, 500, socket, r_id);
+    io.sockets.connected[socket.id].emit("switchTurn");
+    io.sockets.connected[socket.id].emit("updateBoard", {
+        x: move[0],
+        y: move[1],
+        ficha: FICHAS[1]
+    });
 }
 
 function IA_move(r_id) {
-    console.log("IA_turn " + r_id);
     var room = ia_rooms[r_id];
     for (var x = 0; x < 3; ++x) {
         for (var y = 0; y < 3; ++y) {
