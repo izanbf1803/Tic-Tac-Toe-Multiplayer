@@ -29,6 +29,7 @@ $(function(){
     var isMyTurn = false;
     var htmlBoard = new HTMLBoard();
     var ficha;
+    var connection_lost_count = 0;
 
     function HTMLBoard(){  //HTMLBoard class
         this.rows = [,,,];
@@ -76,24 +77,31 @@ $(function(){
     }
 
     var checkConnection = function(){   //Check socket connection, if connection lost, reload page
-        if (socket.connected) {
-            setTimeout(checkConnection, 2000);
-            return;
+        if (connection_lost_count < 3) {
+            if (socket.connected) {
+                connection_lost_count = 0;
+            }
+            else {
+                ++connection_lost_count;
+            }
+            setTimeout(checkConnection, 1000);
         }
-        $("span#time-interval").html(time);
-        checkConnectionInterval = setInterval(function(){
-            time--;
-            $("#err>span#time-interval").html(time);
-        },1000);
-        hideAllDivs();
-        $("#err-text").html("Can't connect to server");
-        if (connectionErrorTEXT != null)
-            $("#err-text").html(connectionErrorTEXT);
-        $("div#err").fadeIn();
-        setTimeout(function(){
-            clearInterval(checkConnectionInterval);
-            location.reload();
-        },2000);
+        else {
+            $("span#time-interval").html(time);
+            checkConnectionInterval = setInterval(function(){
+                time--;
+                $("#err>span#time-interval").html(time);
+            },1000);
+            hideAllDivs();
+            $("#err-text").html("Can't connect to server");
+            if (connectionErrorTEXT != null)
+                $("#err-text").html(connectionErrorTEXT);
+            $("div#err").fadeIn();
+            setTimeout(function(){
+                clearInterval(checkConnectionInterval);
+                location.reload();
+            },2000);
+        }
     };
 
     var setNick = function(__nick){
