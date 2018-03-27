@@ -91,7 +91,7 @@ int minimax(int turn, int depth, int alpha, int beta)
                 byte winner = check_winner(turn);
 
                 if (winner == NO_WINNER) {
-                    int score = minimax(!turn, depth+1);
+                    int score = minimax(!turn, depth+1, alpha, beta);
                     if (turn == SELF) {
                         best = max(best, score);
                         alpha = max(alpha, best);
@@ -115,6 +115,7 @@ int minimax(int turn, int depth, int alpha, int beta)
                 grid[y][x] = FREE;
             }
         }
+        if (beta <= alpha) break;
     }
     return best;
 }
