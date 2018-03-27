@@ -1,115 +1,170 @@
 #include <iostream>
-#include <vector>
+#include <iomanip>
+#include <cmath>
 #include <climits>
+#include <algorithm>
+#include <vector>
+#include <array>
+#include <queue>
+#include <stack>
+#include <set>
+#include <unordered_set>
+#include <map>
+#include <unordered_map>
 using namespace std;
+
+#define PI 3.14159265
+#define PHI 1.61803398
 
 #define D(x) cerr << #x << " = " << (x) << ", "
 
+typedef unsigned int uint;
+typedef unsigned long ul;
+typedef unsigned long long ull;
+typedef long long ll;
+typedef long double ld;
+typedef unsigned char byte;
+
 template<typename T> using V = vector<T>;
 template<typename T, typename U> using P = pair<T,U>;
+template<typename T, typename U> using umap = unordered_map<T,U>;
+template<typename T, typename U> using uset = unordered_set<T,U>;
+template<typename T> using min_heap = priority_queue<T, vector<T>, greater<T>>;
+template<typename T> using max_heap = priority_queue<T>;
 
-const V<char> FICHAS = {'x', 'y'};
+// grid values
+#define SELF 0
+#define ENEMY 1
+#define FREE 2
+// check_winner return values
+#define TIE 0
+#define TURN_WINNER 1
+#define NO_WINNER 2
 
-V<V<char>> grid;
+V<V<byte>> grid(3, V<byte>(3, FREE));
+int turn_count = 0;
 
-char checkWinner(char ficha)
+template <typename T1, typename T2>
+std::ostream& operator<<(std::ostream& os, const std::pair<T1, T2> p)
 {
-    int game_step = 0;
-    for (int x = 0; x < 3; ++x) {
-        for (int y = 0; y < 3; ++y) {
-            if (grid[x][y] != '-') ++game_step;
-        }
-    }
+    os << p.first << ' ' << p.second;
+    return os;
+}
 
+byte check_winner(int player)
+{
     for (int x = 0; x < 3; x++){
         int xCount = 0, yCount = 0;
         for (int y = 0; y < 3; y++){
-            if (grid[x][y] == ficha) xCount++;
-            if (grid[y][x] == ficha) yCount++;
-            if (xCount == 3 || yCount == 3) return ficha;
+            if (grid[y][x] == player) yCount++;
+            if (grid[x][y] == player) xCount++;
+            if (xCount == 3 || yCount == 3) return TURN_WINNER;
         }
     }
 
     int diagCount = 0;
     for (int x = 0, y = 0; x < 3; x++, y++) {
-        if (grid[x][y] == ficha)
+        if (grid[y][x] == player)
             diagCount++;
     }
-    if (diagCount == 3) return ficha;
+    if (diagCount == 3) return TURN_WINNER;
 
     diagCount = 0;
     for (int x = 0, y = 2; x < 3; x++, y--) {
-        if (grid[x][y] == ficha) diagCount++;
+        if (grid[y][x] == player) diagCount++;
     }
-    if (diagCount == 3) return ficha;
+    if (diagCount == 3) return TURN_WINNER;
 
-    if (game_step == 9) return 'T'; // tie
+    if (turn_count >= 9) return TIE;
 
-    return '-'; 
-}   
+    return NO_WINNER;
+}
 
-int minimax(int turn)
+int minimax(int turn, int depth, int alpha, int beta)
 {
-    int best = (turn == 1 ? INT_MIN : INT_MAX);
-    for (int x = 0; x < 3; ++x) {
-        for (int y = 0; y < 3; ++y) {
-            if (grid[x][y] == '-') {
-                grid[x][y] = FICHAS[turn];
+    int best = (turn == SELF ? INT_MIN : INT_MAX);
+    for (int y = 0; y < 3; ++y) {
+        for (int x = 0; x < 3; ++x) {
+            if (grid[y][x] == FREE) {
+                grid[y][x] = turn;
 
-                char winner = checkWinner(FICHAS[turn]);
+                byte winner = check_winner(turn);
 
-                if (winner == '-') {
-                    int score = minimax(0);
-                    if ((turn == 1 and score > best) or (turn == 0 and score < best)) {
-                        best = score;
+                if (winner == NO_WINNER) {
+                    int score = minimax(!turn, depth+1);
+                    if (turn == SELF) {
+                        best = max(best, score);
+                        alpha = max(alpha, best);
                     }
+                    else if (turn == ENEMY) {
+                        best = min(best, score);
+                        beta = min(beta, best);
+                    }
+                    if (beta <= alpha) break;
+                }
+                else { // winner != NO_WINNER
+                    int score = TIE; // 0
+                    if (winner == TURN_WINNER) {
+                        score = (10-depth);
+                    }
+                    if (turn == SELF)  best = max(best, score);
+                    if (turn == ENEMY) best = min(best, -score);
                 }
 
                 // Restore
-                grid[x][y] = '-';
-
-                if (winner != '-') {
-                    if (winner == 'x') return (turn == 1 ? -1 : 1);
-                    if (winner == 'y') return (turn == 1 ? 1 : -1);
-                    if (winner == 'T') return 0;
-                }
+                grid[y][x] = FREE;
             }
         }
     }
     return best;
 }
 
-int main(int argc, char** argv)
+void play_turn()
 {
-    P<int,int> move = {-1, -1};
-    grid = V<V<char>>(3, V<char>(3, '-'));
-    for (int x = 0; x < 3; ++x) {
-        for (int y = 0; y < 3; ++y) {
-            grid[x][y] = argv[1][3*x+y];
-            if (grid[x][y] == '-' and move.first == -1) {
-                move = {x, y};
-            }
-        }
-    }
+    ++turn_count;
 
+    P<int,int> move = {-1, -1};
     int best = INT_MIN;
 
-    for (int x = 0; x < 3; ++x) {
-        for (int y = 0; y < 3; ++y) {
-            if (grid[x][y] == '-') {
-                grid[x][y] = 'y';
+    for (int y = 0; y < 3; ++y) {
+        for (int x = 0; x < 3; ++x) {
+            if (grid[y][x] == FREE) {
+                grid[y][x] = SELF;
 
-                int score = minimax(0);
+                int score = minimax(ENEMY, 0, INT_MIN, INT_MAX);
+                // cerr << make_pair(x, y) << " " << score << endl;
                 if (score > best) {
-                    move = {x, y};
+                    move = {y, x};
                     best = score;
                 }
 
                 // Restore
-                grid[x][y] = '-';
+                grid[y][x] = FREE;
             }
         }
     }
 
+    grid[move.first][move.second] = SELF;
     cout << move.first << move.second << endl;
+}
+
+int main(int argc, char** argv)
+{
+    for (int y = 0; y < 3; ++y) {
+        for (int x = 0; x < 3; ++x) {
+            switch (argv[1][3*y+x]) {
+                case '-':
+                    grid[y][x] = FREE;
+                    break;
+                case 'x':
+                    grid[y][x] = ENEMY;
+                    break;
+                case 'y':
+                    grid[y][x] = SELF;
+                    break;
+            }
+        }
+    }
+
+    play_turn();
 }

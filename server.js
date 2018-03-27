@@ -314,9 +314,10 @@ function ia_queue_serve(){
             clients[socket.id].isMyTurn = true;
         }
         else {
-            var x = [0, 2][randomRange(0, 1)];
-            var y = [0, 2][randomRange(0, 1)];
-            IA_turn(socket, r_id, [x, y]);
+            //var x = [0, 2][randomRange(0, 1)];
+            //var y = [0, 2][randomRange(0, 1)];
+            //IA_turn(socket, r_id, [x, y]);
+            IA_turn(socket, r_id, null);
         }
 
         ia_queue.shift();
@@ -355,7 +356,8 @@ function IA_turn(socket, r_id, move) {
         }
 
         var result = execSync("minimax.exe " + board_str).toString();
-        console.log(result);
+        // console.log("=>"+board_str);
+        // console.log("<="+result);
         IA_move(socket, r_id, [parseInt(result[0]), parseInt(result[1])]);
     }
 }
